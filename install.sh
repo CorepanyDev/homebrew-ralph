@@ -78,3 +78,100 @@ check_dependencies() {
         fi
     fi
 }
+
+# Get the latest version from GitHub API
+get_latest_version() {
+    local latest_version
+    latest_version=$(curl -s "https://api.github.com/repos/${RALPH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+    if [ -z "$latest_version" ]; then
+        # Fallback: try to get from tags if no releases
+        latest_version=$(curl -s "https://api.github.com/repos/${RALPH_REPO}/tags" | grep '"name":' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+    fi
+    echo "$latest_version"
+}
+
+# Download ralph to the install directory
+download_ralph() {
+    local version="$1"
+    local download_url="https://raw.githubusercontent.com/${RALPH_REPO}/v${version}/bin/ralph"
+    local dest="${INSTALL_DIR}/ralph"
+
+    echo -e "${BLUE}Downloading ralph v${version}...${NC}"
+
+    # Create install directory if it doesn't exist
+    if [ ! -d "$INSTALL_DIR" ]; then
+        mkdir -p "$INSTALL_DIR"
+        echo -e "  Created directory: ${INSTALL_DIR}"
+    fi
+
+    # Download the script
+    if ! curl -fsSL "$download_url" -o "$dest" 2>/dev/null; then
+        echo -e "${RED}Error: Failed to download ralph from GitHub.${NC}"
+        echo "URL: $download_url"
+        exit 1
+    fi
+
+    # Verify the downloaded file
+    if [ ! -s "$dest" ] || ! head -1 "$dest" | grep -q "^#!/"; then
+        rm -f "$dest"
+        echo -e "${RED}Error: Downloaded file appears to be invalid.${NC}"
+        exit 1
+    fi
+
+    # Make it executable
+    chmod +x "$dest"
+    echo -e "  ${GREEN}✓${NC} Downloaded to ${dest}"
+}
+
+# Setup PATH in shell configuration
+setup_path() {
+    local shell_name="$1"
+    local shell_config=""
+
+    # Determine the shell config file
+    case "$shell_name" in
+        zsh)
+            shell_config="$HOME/.zshrc"
+            ;;
+        bash)
+            # Use .bashrc for Linux, .bash_profile for macOS
+            if [ -f "$HOME/.bashrc" ]; then
+                shell_config="$HOME/.bashrc"
+            else
+                shell_config="$HOME/.bash_profile"
+            fi
+            ;;
+        fish)
+            shell_config="$HOME/.config/fish/config.fish"
+            ;;
+        *)
+            shell_config="$HOME/.profile"
+            ;;
+    esac
+
+    # Check if INSTALL_DIR is already in PATH
+    if echo "$PATH" | grep -q "$INSTALL_DIR"; then
+        echo -e "  ${GREEN}✓${NC} ${INSTALL_DIR} is already in PATH"
+        return 0
+    fi
+
+    # Check if the PATH export already exists in the config file
+    if [ -f "$shell_config" ] && grep -q "export PATH=.*${INSTALL_DIR}" "$shell_config" 2>/dev/null; then
+        echo -e "  ${GREEN}✓${NC} PATH entry already exists in ${shell_config}"
+        return 0
+    fi
+
+    # Add PATH export to shell config
+    echo "" >> "$shell_config"
+    echo "# Added by ralph installer" >> "$shell_config"
+
+    if [ "$shell_name" = "fish" ]; then
+        # Fish shell uses different syntax
+        echo "set -gx PATH \"\$HOME/.local/bin\" \$PATH" >> "$shell_config"
+    else
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$shell_config"
+    fi
+
+    echo -e "  ${GREEN}✓${NC} Added ${INSTALL_DIR} to PATH in ${shell_config}"
+    echo -e "  ${YELLOW}Note:${NC} Run 'source ${shell_config}' or restart your shell to use ralph"
+}
