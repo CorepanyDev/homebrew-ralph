@@ -253,3 +253,66 @@ Ralph uses a JSON-based Product Requirements Document (PRD) to track tasks. Each
 3. **Verification**: Runs tests and type checking to ensure acceptance criteria are met
 4. **Completion**: Sets `passes: true` in the PRD when all criteria are satisfied
 5. **Progress Logging**: Appends notes about what was done to `progress.txt`
+
+## Updating
+
+### curl Installation
+
+Update to the latest version using the built-in update command:
+
+```bash
+ralph --update
+```
+
+This will:
+- Check the latest version from GitHub
+- Compare with your current version
+- Download and replace the script if a newer version is available
+
+### Homebrew Installation
+
+If you installed ralph via Homebrew, use:
+
+```bash
+brew upgrade ralph
+```
+
+Ralph will detect Homebrew installations and remind you to use `brew upgrade` instead of the self-update feature.
+
+## Uninstalling
+
+### curl Installation
+
+Remove ralph by deleting the script:
+
+```bash
+rm ~/.local/bin/ralph
+```
+
+Or if you installed to a custom location:
+
+```bash
+rm /path/to/your/ralph
+```
+
+You can also use the uninstall script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Corepany/ralph/main/uninstall.sh | bash
+```
+
+### Homebrew Installation
+
+```bash
+brew uninstall ralph
+```
+
+## Resources
+
+- [Tips for AI Coding with Ralph Wiggum](https://www.aihero.dev/tips-for-ai-coding-with-ralph-wiggum) - Best practices and workflow tips
+- [Claude Code CLI Documentation](https://docs.anthropic.com/en/docs/claude-code) - Official documentation for the underlying AI assistant
+- [GitHub Repository](https://github.com/Corepany/ralph) - Source code, issues, and releases
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
