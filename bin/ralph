@@ -141,6 +141,12 @@ EOF
     exit 0
 }
 
+# Check for --version flag
+if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
+    echo "ralph version ${RALPH_VERSION}"
+    exit 0
+fi
+
 # Check for --init flag
 if [ "$1" = "--init" ] || [ "$1" = "-i" ]; then
     init_templates
