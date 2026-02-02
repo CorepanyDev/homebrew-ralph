@@ -1,7 +1,7 @@
 class Ralph < Formula
   desc "Autonomous AI coding loop powered by Claude Code CLI"
-  homepage "https://github.com/Corepany/ralph"
-  url "https://github.com/Corepany/ralph/archive/refs/tags/v1.0.0.tar.gz"
+  homepage "https://github.com/CorepanyDev/ralph"
+  url "https://github.com/CorepanyDev/ralph/archive/refs/tags/v1.0.0.tar.gz"
   license "MIT"
 
   def install
