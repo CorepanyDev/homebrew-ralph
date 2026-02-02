@@ -91,3 +91,72 @@ git clone https://github.com/Corepany/ralph.git
 sudo cp ralph/bin/ralph /usr/local/bin/
 sudo chmod +x /usr/local/bin/ralph
 ```
+
+## Usage
+
+### Initialize a Project
+
+Start by creating template files for your project:
+
+```bash
+ralph --init
+```
+
+This creates:
+- `prd.json` - The Product Requirements Document with example tasks
+- `progress.txt` - A log file for tracking learnings across iterations
+- `project-request.md` - A template for describing your project idea
+
+### Generate a PRD
+
+Use `--plan` to generate a PRD from your project description:
+
+**From a file (recommended for complex projects):**
+```bash
+# Edit project-request.md with your project idea, then:
+ralph --plan
+```
+
+**Inline for quick projects:**
+```bash
+ralph --plan "Build a REST API for a todo app with user authentication"
+```
+
+The planning mode uses Claude to:
+1. Read any existing `CLAUDE.md` for project context
+2. Break down your requirements into small, atomic tasks
+3. Generate acceptance criteria for each task
+4. Output a properly ordered `prd.json`
+
+### Run Iterations
+
+Once you have a `prd.json`, run ralph with a maximum number of iterations:
+
+```bash
+ralph 10
+```
+
+Each iteration:
+1. Reads `prd.json` and `progress.txt`
+2. Picks the highest priority incomplete task
+3. Implements the feature following project conventions
+4. Runs tests and type checking
+5. Updates the PRD (marks task as complete)
+6. Appends notes to `progress.txt`
+7. Commits changes to git
+
+Ralph continues until:
+- All tasks are complete (`RALPH_COMPLETE`)
+- Human help is needed (`RALPH_NEEDS_HELP`)
+- Maximum iterations reached
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `ralph <n>` | Run ralph for n iterations, working through the PRD |
+| `ralph --init` | Create template files (prd.json, progress.txt, project-request.md) |
+| `ralph --plan [desc]` | Generate PRD from project-request.md or inline description |
+| `ralph --update` | Check for and install updates (or show Homebrew instructions) |
+| `ralph --version` | Display the current version |
+| `ralph --help` | Show help message with usage information |
