@@ -1,8 +1,8 @@
 #!/bin/bash
 # Ralph Wiggum - Autonomous AI Coding Loop
-# Usage: ralph <max_iterations> | ralph --init | ralph --plan [description]
+# Usage: ralph <max_iterations> | ralph --init | ralph --reset | ralph --plan [description]
 
-RALPH_VERSION='1.0.0'
+RALPH_VERSION='1.1.0'
 RALPH_REPO='CorepanyDev/homebrew-ralph'
 #
 # This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
@@ -131,6 +131,127 @@ EOF
 
     echo ""
     echo -e "${GREEN}Initialization complete!${NC}"
+    echo ""
+    echo -e "Next steps:"
+    echo -e "  1. Edit ${YELLOW}project-request.md${NC} with your project idea"
+    echo -e "  2. Run ${YELLOW}ralph --plan${NC} to generate prd.json"
+    echo -e "  3. Review and adjust ${YELLOW}prd.json${NC} if needed"
+    echo -e "  4. Run ${YELLOW}ralph <max_iterations>${NC} to start coding"
+    echo ""
+    exit 0
+}
+
+# Function to reset template files to initial state
+reset_templates() {
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  Ralph Wiggum - Reset Project         ${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+    echo -e "${YELLOW}This will reset the following files to their template state:${NC}"
+    echo -e "  - ${PRD_FILE}"
+    echo -e "  - ${PROGRESS_FILE}"
+    echo -e "  - ${PROJECT_REQUEST_FILE}"
+    echo ""
+    echo -e "${RED}WARNING: Any existing content in these files will be lost!${NC}"
+    echo ""
+
+    # Prompt for confirmation
+    read -r -p "Are you sure you want to reset? (y/N) " response
+    case "$response" in
+        [yY][eE][sS]|[yY])
+            ;;
+        *)
+            echo ""
+            echo -e "${YELLOW}Reset cancelled.${NC}"
+            exit 0
+            ;;
+    esac
+
+    echo ""
+
+    # Reset prd.json
+    cat > "$PRD_FILE" << 'EOF'
+[
+  {
+    "id": 1,
+    "description": "Example: User authentication with email/password",
+    "acceptance_criteria": [
+      "Login form displays email and password fields",
+      "Successful login redirects to dashboard",
+      "Invalid credentials show error message",
+      "Password is securely hashed"
+    ],
+    "priority": "high",
+    "passes": false
+  },
+  {
+    "id": 2,
+    "description": "Example: User can view their profile",
+    "acceptance_criteria": [
+      "Profile page shows user's name and email",
+      "Profile is only accessible when logged in",
+      "Unauthorized access redirects to login"
+    ],
+    "priority": "medium",
+    "passes": false
+  },
+  {
+    "id": 3,
+    "description": "Example: User can update their profile",
+    "acceptance_criteria": [
+      "Edit form pre-fills current values",
+      "Changes are saved to database",
+      "Success message appears after save",
+      "Validation errors display inline"
+    ],
+    "priority": "medium",
+    "passes": false
+  }
+]
+EOF
+    echo -e "${GREEN}Reset: ${PRD_FILE}${NC}"
+
+    # Reset progress.txt
+    cat > "$PROGRESS_FILE" << 'EOF'
+# Ralph Progress Log
+# This file tracks learnings and notes across iterations
+# The LLM appends to this file after each task completion
+# Delete this file when starting a new sprint
+
+## Sprint: [Sprint Name]
+## Started: [Date]
+
+---
+EOF
+    echo -e "${GREEN}Reset: ${PROGRESS_FILE}${NC}"
+
+    # Reset project-request.md
+    cat > "$PROJECT_REQUEST_FILE" << 'EOF'
+# Project Request
+
+## Overview
+Describe your project idea here. What are you building? What problem does it solve?
+
+## Features
+- Feature 1: Description
+- Feature 2: Description
+- Feature 3: Description
+
+## Technical Requirements
+- Any specific technologies or frameworks to use
+- Performance requirements
+- Security considerations
+
+## User Stories
+Describe the main user flows and interactions.
+
+## Notes
+Any additional context or constraints.
+EOF
+    echo -e "${GREEN}Reset: ${PROJECT_REQUEST_FILE}${NC}"
+
+    echo ""
+    echo -e "${GREEN}Reset complete!${NC}"
     echo ""
     echo -e "Next steps:"
     echo -e "  1. Edit ${YELLOW}project-request.md${NC} with your project idea"
@@ -272,6 +393,11 @@ if [ "$1" = "--init" ] || [ "$1" = "-i" ]; then
     init_templates
 fi
 
+# Check for --reset flag
+if [ "$1" = "--reset" ] || [ "$1" = "-r" ]; then
+    reset_templates
+fi
+
 # Check for --plan flag
 if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
     echo -e "${BLUE}========================================${NC}"
@@ -403,6 +529,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Usage:"
     echo "  ralph <max_iterations>    Run Ralph for N iterations"
     echo "  ralph --init              Create template files (prd.json, progress.txt, project-request.md)"
+    echo "  ralph --reset             Reset template files to initial state"
     echo "  ralph --plan [desc]       Generate PRD from project-request.md or description"
     echo "  ralph --version           Show version information"
     echo "  ralph --update            Update ralph to latest version"
@@ -410,6 +537,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo ""
     echo "Examples:"
     echo "  ralph --init              Initialize a new project"
+    echo "  ralph --reset             Reset project files to template state"
     echo "  ralph --plan              Generate PRD from project-request.md"
     echo "  ralph --plan \"Build a todo app\"   Generate PRD from description"
     echo "  ralph 10                  Run 10 autonomous iterations"
