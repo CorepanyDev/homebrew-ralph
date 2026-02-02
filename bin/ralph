@@ -141,9 +141,70 @@ EOF
     exit 0
 }
 
+# Function to get latest version from GitHub API
+get_latest_version() {
+    local latest_version
+    latest_version=$(curl -s "https://api.github.com/repos/${RALPH_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+    if [ -z "$latest_version" ]; then
+        # Fallback: try to get from tags if no releases
+        latest_version=$(curl -s "https://api.github.com/repos/${RALPH_REPO}/tags" | grep '"name":' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+    fi
+    echo "$latest_version"
+}
+
+# Function to detect if installed via Homebrew
+is_homebrew_install() {
+    local script_path
+    script_path=$(realpath "$0" 2>/dev/null || readlink -f "$0" 2>/dev/null || echo "$0")
+    if [[ "$script_path" == */Cellar/* ]] || [[ "$script_path" == */homebrew/* ]] || [[ "$script_path" == */linuxbrew/* ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # Check for --version flag
 if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
     echo "ralph version ${RALPH_VERSION}"
+    exit 0
+fi
+
+# Check for --update flag
+if [ "$1" = "--update" ] || [ "$1" = "-u" ]; then
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  Ralph Wiggum - Update Check          ${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+
+    # Check if installed via Homebrew
+    if is_homebrew_install; then
+        echo -e "${YELLOW}Ralph was installed via Homebrew.${NC}"
+        echo ""
+        echo -e "Please update using: ${GREEN}brew upgrade ralph${NC}"
+        echo ""
+        exit 0
+    fi
+
+    echo -e "Checking for updates..."
+    echo ""
+
+    LATEST_VERSION=$(get_latest_version)
+
+    if [ -z "$LATEST_VERSION" ]; then
+        echo -e "${RED}Error: Could not fetch latest version from GitHub.${NC}"
+        echo "Please check your internet connection and try again."
+        exit 1
+    fi
+
+    echo -e "Current version: ${YELLOW}${RALPH_VERSION}${NC}"
+    echo -e "Latest version:  ${YELLOW}${LATEST_VERSION}${NC}"
+    echo ""
+
+    if [ "$RALPH_VERSION" = "$LATEST_VERSION" ]; then
+        echo -e "${GREEN}You are already on the latest version!${NC}"
+        exit 0
+    fi
+
+    echo -e "${YELLOW}A new version is available!${NC}"
     exit 0
 fi
 
