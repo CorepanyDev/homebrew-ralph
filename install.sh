@@ -175,3 +175,89 @@ setup_path() {
     echo -e "  ${GREEN}✓${NC} Added ${INSTALL_DIR} to PATH in ${shell_config}"
     echo -e "  ${YELLOW}Note:${NC} Run 'source ${shell_config}' or restart your shell to use ralph"
 }
+
+# Ensure install directory exists
+ensure_install_dir() {
+    if [ ! -d "$INSTALL_DIR" ]; then
+        mkdir -p "$INSTALL_DIR"
+        echo -e "  Created directory: ${INSTALL_DIR}"
+    fi
+}
+
+# Display installation banner
+show_banner() {
+    echo ""
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC}                                                   ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}   ${GREEN}Ralph Wiggum${NC} - Autonomous AI Coding Loop      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}                                                   ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════╝${NC}"
+    echo ""
+}
+
+# Display success message with quick start commands
+show_success() {
+    local version="$1"
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║${NC}                                                   ${GREEN}║${NC}"
+    echo -e "${GREEN}║${NC}   ${GREEN}✓${NC} Installation complete!                        ${GREEN}║${NC}"
+    echo -e "${GREEN}║${NC}                                                   ${GREEN}║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "  Installed version: ${GREEN}v${version}${NC}"
+    echo ""
+    echo -e "${BLUE}Quick Start:${NC}"
+    echo "  ralph --help      Show all available commands"
+    echo "  ralph --init      Initialize a new project"
+    echo "  ralph --plan      Generate a PRD from project-request.md"
+    echo ""
+}
+
+# Main function
+main() {
+    show_banner
+
+    echo -e "${BLUE}Installing Ralph Wiggum...${NC}"
+    echo ""
+
+    # Step 1: Detect OS
+    local os
+    os=$(detect_os)
+    echo -e "  ${GREEN}✓${NC} Detected OS: ${os}"
+
+    # Step 2: Check dependencies
+    check_dependencies
+    echo ""
+
+    # Step 3: Ensure install directory exists
+    ensure_install_dir
+
+    # Step 4: Get latest version and download
+    echo -e "${BLUE}Fetching latest version...${NC}"
+    local version
+    version=$(get_latest_version)
+    if [ -z "$version" ]; then
+        echo -e "${RED}Error: Could not determine latest version from GitHub.${NC}"
+        exit 1
+    fi
+    echo -e "  ${GREEN}✓${NC} Latest version: v${version}"
+    echo ""
+
+    # Step 5: Download ralph
+    download_ralph "$version"
+    echo ""
+
+    # Step 6: Setup PATH
+    echo -e "${BLUE}Configuring PATH...${NC}"
+    local shell_name
+    shell_name=$(detect_shell)
+    setup_path "$shell_name"
+    echo ""
+
+    # Step 7: Show success message
+    show_success "$version"
+}
+
+# Run main
+main "$@"
