@@ -1,0 +1,422 @@
+#!/bin/bash
+# Ralph Wiggum - Autonomous AI Coding Loop
+# Usage: ralph <max_iterations> | ralph --init | ralph --plan [description]
+#
+# This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
+# one task at a time. Each iteration:
+# 1. Reads prd.json and progress.txt
+# 2. Picks the highest priority incomplete task
+# 3. Implements, tests, and verifies
+# 4. Updates PRD and progress.txt
+# 5. Commits to git
+# 6. Repeats until PRD is complete or max iterations reached
+
+set -e
+
+# Configuration - Uses current working directory
+SCRIPT_DIR="$(pwd)"
+PRD_FILE="${SCRIPT_DIR}/prd.json"
+PROGRESS_FILE="${SCRIPT_DIR}/progress.txt"
+PROJECT_REQUEST_FILE="${SCRIPT_DIR}/project-request.md"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to create template files
+init_templates() {
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  Ralph Wiggum - Initialize Project    ${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+
+    # Create prd.json template
+    if [ -f "$PRD_FILE" ]; then
+        echo -e "${YELLOW}prd.json already exists, skipping...${NC}"
+    else
+        cat > "$PRD_FILE" << 'EOF'
+[
+  {
+    "id": 1,
+    "description": "Example: User authentication with email/password",
+    "acceptance_criteria": [
+      "Login form displays email and password fields",
+      "Successful login redirects to dashboard",
+      "Invalid credentials show error message",
+      "Password is securely hashed"
+    ],
+    "priority": "high",
+    "passes": false
+  },
+  {
+    "id": 2,
+    "description": "Example: User can view their profile",
+    "acceptance_criteria": [
+      "Profile page shows user's name and email",
+      "Profile is only accessible when logged in",
+      "Unauthorized access redirects to login"
+    ],
+    "priority": "medium",
+    "passes": false
+  },
+  {
+    "id": 3,
+    "description": "Example: User can update their profile",
+    "acceptance_criteria": [
+      "Edit form pre-fills current values",
+      "Changes are saved to database",
+      "Success message appears after save",
+      "Validation errors display inline"
+    ],
+    "priority": "medium",
+    "passes": false
+  }
+]
+EOF
+        echo -e "${GREEN}Created: ${PRD_FILE}${NC}"
+    fi
+
+    # Create progress.txt template
+    if [ -f "$PROGRESS_FILE" ]; then
+        echo -e "${YELLOW}progress.txt already exists, skipping...${NC}"
+    else
+        cat > "$PROGRESS_FILE" << 'EOF'
+# Ralph Progress Log
+# This file tracks learnings and notes across iterations
+# The LLM appends to this file after each task completion
+# Delete this file when starting a new sprint
+
+## Sprint: [Sprint Name]
+## Started: [Date]
+
+---
+EOF
+        echo -e "${GREEN}Created: ${PROGRESS_FILE}${NC}"
+    fi
+
+    # Create project-request.md template
+    if [ -f "$PROJECT_REQUEST_FILE" ]; then
+        echo -e "${YELLOW}project-request.md already exists, skipping...${NC}"
+    else
+        cat > "$PROJECT_REQUEST_FILE" << 'EOF'
+# Project Request
+
+## Overview
+Describe your project idea here. What are you building? What problem does it solve?
+
+## Features
+- Feature 1: Description
+- Feature 2: Description
+- Feature 3: Description
+
+## Technical Requirements
+- Any specific technologies or frameworks to use
+- Performance requirements
+- Security considerations
+
+## User Stories
+Describe the main user flows and interactions.
+
+## Notes
+Any additional context or constraints.
+EOF
+        echo -e "${GREEN}Created: ${PROJECT_REQUEST_FILE}${NC}"
+    fi
+
+    echo ""
+    echo -e "${GREEN}Initialization complete!${NC}"
+    echo ""
+    echo -e "Next steps:"
+    echo -e "  1. Edit ${YELLOW}project-request.md${NC} with your project idea"
+    echo -e "  2. Run ${YELLOW}ralph --plan${NC} to generate prd.json"
+    echo -e "  3. Review and adjust ${YELLOW}prd.json${NC} if needed"
+    echo -e "  4. Run ${YELLOW}ralph <max_iterations>${NC} to start coding"
+    echo ""
+    exit 0
+}
+
+# Check for --init flag
+if [ "$1" = "--init" ] || [ "$1" = "-i" ]; then
+    init_templates
+fi
+
+# Check for --plan flag
+if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  Ralph Wiggum - PRD Planning Mode     ${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+
+    # Get project description from file or parameter
+    PROJECT_DESCRIPTION=""
+
+    if [ -f "$PROJECT_REQUEST_FILE" ]; then
+        PROJECT_DESCRIPTION=$(cat "$PROJECT_REQUEST_FILE")
+        echo -e "Using project description from: ${YELLOW}${PROJECT_REQUEST_FILE}${NC}"
+    elif [ -n "$2" ]; then
+        PROJECT_DESCRIPTION="$2"
+        echo -e "Using project description from parameter"
+    else
+        echo -e "${RED}Error: No project description provided${NC}"
+        echo ""
+        echo "Provide a project description either by:"
+        echo "  1. Creating a ${YELLOW}project-request.md${NC} file (run 'ralph --init' first)"
+        echo "  2. Passing it as a parameter: ${YELLOW}ralph --plan \"Your project description\"${NC}"
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo -e "${YELLOW}Starting interactive Claude session to generate PRD...${NC}"
+    echo ""
+
+    # The PRD generation prompt
+    PLAN_PROMPT="I need you to create a Product Requirements Document (PRD) in JSON format for an AI coding agent to work through.
+
+First, read the CLAUDE.md file in the project root to understand the tech stack and project context.
+
+## Project Idea
+${PROJECT_DESCRIPTION}
+
+## Requirements for the PRD
+
+1. **Output Format**: JSON array saved to \`prd.json\`
+
+2. **Structure for each item**:
+\`\`\`json
+{
+  \"id\": 1,
+  \"description\": \"Brief description of the feature/task\",
+  \"acceptance_criteria\": [
+    \"Specific, testable criterion 1\",
+    \"Specific, testable criterion 2\"
+  ],
+  \"passes\": false
+}
+\`\`\`
+
+3. **Task Sizing** (CRITICAL):
+   - Each task must be SMALL and ATOMIC
+   - Completable in a single AI context window
+   - One focused piece of functionality per task
+   - If a feature is large, break it into multiple tasks
+   - Maximum 30 tasks total (can be less for smaller projects)
+   - Balance atomicity with keeping total tasks under 30
+
+4. **Task Independence**:
+   - Order tasks by logical dependencies
+   - Earlier tasks should not depend on later ones
+   - Each task should be verifiable on its own
+
+5. **Acceptance Criteria**:
+   - Must be specific and testable
+   - Include both positive and negative cases where relevant
+   - Think: \"How would I verify this works?\"
+
+6. **Best Practices**:
+   - Start with foundational/setup tasks
+   - Group related features but keep tasks small
+   - Include error handling as separate tasks
+   - Consider edge cases as separate tasks if complex
+   - Follow the conventions and patterns from CLAUDE.md
+
+## Example Good Task (Small & Focused)
+\`\`\`json
+{
+  \"id\": 5,
+  \"description\": \"User can see validation errors on login form\",
+  \"acceptance_criteria\": [
+    \"Empty email shows 'Email is required' error\",
+    \"Invalid email format shows 'Invalid email' error\",
+    \"Empty password shows 'Password is required' error\",
+    \"Errors clear when user starts typing\"
+  ],
+  \"passes\": false
+}
+\`\`\`
+
+## Example Bad Task (Too Large)
+\`\`\`json
+{
+  \"id\": 1,
+  \"description\": \"Complete user authentication system\",
+  \"acceptance_criteria\": [
+    \"User can register, login, logout, reset password, verify email...\"
+  ],
+  \"passes\": false
+}
+\`\`\`
+
+Generate the PRD now. Remember: SMALL tasks are critical for success."
+
+    # Run Claude in plan mode to generate the PRD
+    (cd "$SCRIPT_DIR" && claude --permission-mode plan "$PLAN_PROMPT")
+
+    echo ""
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}  PRD Planning Complete!               ${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo ""
+    echo -e "Next steps:"
+    echo -e "  1. Review ${YELLOW}prd.json${NC}"
+    echo -e "  2. Run ${YELLOW}ralph <max_iterations>${NC} to start coding"
+    echo ""
+    exit 0
+fi
+
+# Show help
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Ralph Wiggum - Autonomous AI Coding Loop"
+    echo ""
+    echo "Usage:"
+    echo "  ralph <max_iterations>    Run Ralph for N iterations"
+    echo "  ralph --init              Create template files (prd.json, progress.txt, project-request.md)"
+    echo "  ralph --plan [desc]       Generate PRD from project-request.md or description"
+    echo "  ralph --help              Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  ralph --init              Initialize a new project"
+    echo "  ralph --plan              Generate PRD from project-request.md"
+    echo "  ralph --plan \"Build a todo app\"   Generate PRD from description"
+    echo "  ralph 10                  Run 10 autonomous iterations"
+    echo ""
+    exit 0
+fi
+
+# Validate arguments
+if [ -z "$1" ]; then
+    echo -e "${RED}Error: Please provide max iterations${NC}"
+    echo "Usage: ralph <max_iterations>"
+    echo "       ralph --init"
+    echo "Example: ralph 10"
+    exit 1
+fi
+
+MAX_ITERATIONS=$1
+
+# Validate required files exist
+if [ ! -f "$PRD_FILE" ]; then
+    echo -e "${RED}Error: PRD file not found at ${PRD_FILE}${NC}"
+    echo "Run 'ralph --init' to create template files, then 'ralph --plan' to generate PRD."
+    exit 1
+fi
+
+# Create progress.txt if it doesn't exist
+if [ ! -f "$PROGRESS_FILE" ]; then
+    echo "# Ralph Progress Log" > "$PROGRESS_FILE"
+    echo "# This file tracks learnings across iterations" >> "$PROGRESS_FILE"
+    echo "" >> "$PROGRESS_FILE"
+fi
+
+# The prompt that guides Claude Code
+PROMPT="You are working through a Product Requirements Document (PRD).
+
+Read these files first:
+- ${PRD_FILE} - The PRD with user stories (items with passes: false need work)
+- ${PROGRESS_FILE} - Your progress log from previous iterations
+
+Your workflow:
+1. Find the HIGHEST PRIORITY feature that has passes: false
+   - Priority is determined by you based on dependencies and logical order
+   - NOT necessarily the first item in the list
+2. Work ONLY on that single feature
+3. Implement the feature following best practices for the language/framework used
+4. Verify your work:
+   - Run type checking/linting appropriate for the language
+   - Run tests appropriate for the framework
+   - Ensure all checks pass before marking complete
+5. Update the PRD: set passes: true for completed items
+6. APPEND your progress to ${PROGRESS_FILE}
+   - Include what you did, decisions made, and notes for next iteration
+   - APPEND only, never replace the file contents
+7. Make a git commit with a descriptive message
+
+IMPORTANT:
+- Work on ONE feature at a time only
+- Follow best practices for the language and framework in use
+- Ensure CI stays green (all checks and tests pass)
+- If you encounter blocking issues, try to resolve them yourself first
+- Be resourceful: search for solutions, try alternative approaches, read documentation
+- Do NOT add Co-Authored-By or any AI attribution in commit messages
+
+COMPLETION SIGNALS:
+- If ALL items in the PRD have passes: true, output exactly: RALPH_COMPLETE
+- If you are TRULY stuck and cannot proceed after exhausting all options, output exactly: RALPH_NEEDS_HELP
+  followed by a clear explanation of:
+  1. What you were trying to do
+  2. What you tried
+  3. Why you cannot proceed
+  4. What specific help you need from the human
+
+  Use RALPH_NEEDS_HELP only as a LAST RESORT. Always try to solve problems yourself first."
+
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}  Ralph Wiggum - Autonomous AI Coding  ${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo ""
+echo -e "PRD File: ${YELLOW}${PRD_FILE}${NC}"
+echo -e "Progress File: ${YELLOW}${PROGRESS_FILE}${NC}"
+echo -e "Max Iterations: ${YELLOW}${MAX_ITERATIONS}${NC}"
+echo ""
+
+# Temp file for capturing output
+OUTPUT_FILE=$(mktemp)
+trap "rm -f $OUTPUT_FILE" EXIT
+
+# Main loop
+for ((i=1; i<=MAX_ITERATIONS; i++)); do
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}  Iteration ${i} of ${MAX_ITERATIONS}${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo ""
+
+    # Run Claude Code with the prompt in the current working directory
+    # --dangerously-skip-permissions skips all permission prompts
+    # Using tee to both display output and capture it
+    (cd "$SCRIPT_DIR" && claude --dangerously-skip-permissions -p "$PROMPT") 2>&1 | tee "$OUTPUT_FILE"
+
+    # Check if PRD is complete
+    if grep -q "RALPH_COMPLETE" "$OUTPUT_FILE"; then
+        echo ""
+        echo -e "${GREEN}========================================${NC}"
+        echo -e "${GREEN}  PRD Complete after ${i} iterations!${NC}"
+        echo -e "${GREEN}========================================${NC}"
+
+        # Optional: Send notification (uncomment and configure as needed)
+        # notify-send "Ralph Complete" "PRD finished after ${i} iterations"
+        # curl -X POST "your-webhook-url" -d "Ralph complete after ${i} iterations"
+
+        exit 0
+    fi
+
+    # Check if human help is needed
+    if grep -q "RALPH_NEEDS_HELP" "$OUTPUT_FILE"; then
+        echo ""
+        echo -e "${RED}========================================${NC}"
+        echo -e "${RED}  Human In The Loop Required           ${NC}"
+        echo -e "${RED}========================================${NC}"
+        echo ""
+        echo -e "${YELLOW}Ralph is stuck and needs your help.${NC}"
+        echo -e "${YELLOW}Review the output above for details.${NC}"
+        echo ""
+        echo -e "After resolving the issue, run ${GREEN}ralph ${MAX_ITERATIONS}${NC} to continue."
+        echo ""
+        exit 1
+    fi
+
+    echo ""
+    echo -e "${YELLOW}Iteration ${i} complete. Continuing...${NC}"
+    echo ""
+
+    # Small delay between iterations to avoid rate limiting
+    sleep 2
+done
+
+echo ""
+echo -e "${YELLOW}========================================${NC}"
+echo -e "${YELLOW}  Max iterations (${MAX_ITERATIONS}) reached${NC}"
+echo -e "${YELLOW}  PRD may not be complete${NC}"
+echo -e "${YELLOW}========================================${NC}"
