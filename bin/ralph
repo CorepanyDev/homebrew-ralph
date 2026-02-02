@@ -1,8 +1,8 @@
 #!/bin/bash
 # Ralph Wiggum - Autonomous AI Coding Loop
-# Usage: ralph <max_iterations> | ralph --init | ralph --reset | ralph --plan [description]
+# Usage: ralph <max_iterations> | ralph --once | ralph --init | ralph --reset | ralph --plan [description]
 
-RALPH_VERSION='1.1.0'
+RALPH_VERSION='1.2.0'
 RALPH_REPO='CorepanyDev/homebrew-ralph'
 #
 # This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
@@ -398,6 +398,75 @@ if [ "$1" = "--reset" ] || [ "$1" = "-r" ]; then
     reset_templates
 fi
 
+# Check for --once flag (single iteration interactive mode)
+if [ "$1" = "--once" ] || [ "$1" = "-o" ]; then
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}  Ralph Wiggum - Single Iteration Mode ${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo ""
+
+    # Validate required files exist
+    if [ ! -f "$PRD_FILE" ]; then
+        echo -e "${RED}Error: PRD file not found at ${PRD_FILE}${NC}"
+        echo "Run 'ralph --init' to create template files, then 'ralph --plan' to generate PRD."
+        exit 1
+    fi
+
+    # Create progress.txt if it doesn't exist
+    if [ ! -f "$PROGRESS_FILE" ]; then
+        echo "# Ralph Progress Log" > "$PROGRESS_FILE"
+        echo "# This file tracks learnings across iterations" >> "$PROGRESS_FILE"
+        echo "" >> "$PROGRESS_FILE"
+    fi
+
+    echo -e "PRD File: ${YELLOW}${PRD_FILE}${NC}"
+    echo -e "Progress File: ${YELLOW}${PROGRESS_FILE}${NC}"
+    echo ""
+    echo -e "${YELLOW}Starting interactive Claude session...${NC}"
+    echo ""
+
+    # Single iteration prompt optimized for interactive mode
+    SINGLE_PROMPT="You are working through a Product Requirements Document (PRD).
+
+Read these files first:
+- ${PRD_FILE} - The PRD with user stories (items with passes: false need work)
+- ${PROGRESS_FILE} - Your progress log from previous iterations
+
+Your workflow:
+1. Find the HIGHEST PRIORITY feature that has passes: false
+   - Priority is determined by you based on dependencies and logical order
+   - NOT necessarily the first item in the list
+2. Work ONLY on that single feature
+3. Implement the feature following best practices for the language/framework used
+4. Verify your work:
+   - Run type checking/linting appropriate for the language
+   - Run tests appropriate for the framework
+   - Ensure all checks pass before marking complete
+5. Update the PRD: set passes: true for completed items
+6. APPEND your progress to ${PROGRESS_FILE}
+   - Include what you did, decisions made, and notes for next iteration
+   - APPEND only, never replace the file contents
+7. Make a git commit with a descriptive message
+
+IMPORTANT:
+- Work on ONE feature at a time only
+- Follow best practices for the language and framework in use
+- Ensure CI stays green (all checks and tests pass)
+- Do NOT add Co-Authored-By or any AI attribution in commit messages
+
+When you have completed the task, let the user know you are done."
+
+    # Run Claude interactively (no -p flag = interactive mode, user watches in real-time)
+    (cd "$SCRIPT_DIR" && claude --dangerously-skip-permissions "$SINGLE_PROMPT")
+
+    echo ""
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}  Single iteration complete!           ${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo ""
+    exit 0
+fi
+
 # Check for --plan flag
 if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
     echo -e "${BLUE}========================================${NC}"
@@ -528,6 +597,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo ""
     echo "Usage:"
     echo "  ralph <max_iterations>    Run Ralph for N iterations"
+    echo "  ralph --once              Run single iteration interactively"
     echo "  ralph --init              Create template files (prd.json, progress.txt, project-request.md)"
     echo "  ralph --reset             Reset template files to initial state"
     echo "  ralph --plan [desc]       Generate PRD from project-request.md or description"
@@ -541,6 +611,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  ralph --plan              Generate PRD from project-request.md"
     echo "  ralph --plan \"Build a todo app\"   Generate PRD from description"
     echo "  ralph 10                  Run 10 autonomous iterations"
+    echo "  ralph --once              Run one iteration interactively"
     echo ""
     exit 0
 fi
@@ -549,6 +620,7 @@ fi
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Please provide max iterations${NC}"
     echo "Usage: ralph <max_iterations>"
+    echo "       ralph --once"
     echo "       ralph --init"
     echo "Example: ralph 10"
     exit 1
