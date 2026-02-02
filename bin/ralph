@@ -3,7 +3,7 @@
 # Usage: ralph <max_iterations> | ralph --init | ralph --plan [description]
 
 RALPH_VERSION='1.0.0'
-RALPH_REPO='CorepanyDev/ralph'
+RALPH_REPO='CorepanyDev/homebrew-ralph'
 #
 # This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
 # one task at a time. Each iteration:

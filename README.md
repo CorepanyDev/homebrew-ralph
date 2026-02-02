@@ -2,7 +2,7 @@
 
 **Autonomous AI Coding Loop powered by Claude Code CLI**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/CorepanyDev/ralph/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Ralph Wiggum is a CLI tool that runs Claude Code in an autonomous loop, working through a Product Requirements Document (PRD) one feature at a time. It reads your requirements, implements them, verifies the work, and commits changes—all without manual intervention.
@@ -12,13 +12,13 @@ Ralph Wiggum is a CLI tool that runs Claude Code in an autonomous loop, working 
 ### Install with curl (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CorepanyDev/ralph/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CorepanyDev/homebrew-ralph/main/install.sh | bash
 ```
 
 ### Install with Homebrew
 
 ```bash
-brew tap CorepanyDev/ralph
+brew tap CorepanyDev/homebrew-ralph
 brew install ralph
 ```
 
@@ -51,10 +51,11 @@ ralph 5
 The quickest way to install ralph:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CorepanyDev/ralph/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CorepanyDev/homebrew-ralph/main/install.sh | bash
 ```
 
 This will:
+
 - Download ralph to `~/.local/bin`
 - Add the directory to your PATH if needed
 - Make ralph executable
@@ -62,7 +63,7 @@ This will:
 You can customize the install location:
 
 ```bash
-RALPH_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/CorepanyDev/ralph/main/install.sh | bash
+RALPH_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/CorepanyDev/homebrew-ralph/main/install.sh | bash
 ```
 
 ### Homebrew
@@ -70,7 +71,7 @@ RALPH_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/Co
 For macOS and Linux users with Homebrew:
 
 ```bash
-brew tap CorepanyDev/ralph
+brew tap CorepanyDev/homebrew-ralph
 brew install ralph
 ```
 
@@ -79,7 +80,7 @@ brew install ralph
 Clone the repository and copy the script to your PATH:
 
 ```bash
-git clone https://github.com/CorepanyDev/ralph.git
+git clone https://github.com/CorepanyDev/homebrew-ralph.git
 cp ralph/bin/ralph ~/.local/bin/
 chmod +x ~/.local/bin/ralph
 ```
@@ -87,7 +88,7 @@ chmod +x ~/.local/bin/ralph
 Or install system-wide:
 
 ```bash
-git clone https://github.com/CorepanyDev/ralph.git
+git clone https://github.com/CorepanyDev/homebrew-ralph.git
 sudo cp ralph/bin/ralph /usr/local/bin/
 sudo chmod +x /usr/local/bin/ralph
 ```
@@ -103,6 +104,7 @@ ralph --init
 ```
 
 This creates:
+
 - `prd.json` - The Product Requirements Document with example tasks
 - `progress.txt` - A log file for tracking learnings across iterations
 - `project-request.md` - A template for describing your project idea
@@ -112,17 +114,20 @@ This creates:
 Use `--plan` to generate a PRD from your project description:
 
 **From a file (recommended for complex projects):**
+
 ```bash
 # Edit project-request.md with your project idea, then:
 ralph --plan
 ```
 
 **Inline for quick projects:**
+
 ```bash
 ralph --plan "Build a REST API for a todo app with user authentication"
 ```
 
 The planning mode uses Claude to:
+
 1. Read any existing `CLAUDE.md` for project context
 2. Break down your requirements into small, atomic tasks
 3. Generate acceptance criteria for each task
@@ -137,6 +142,7 @@ ralph 10
 ```
 
 Each iteration:
+
 1. Reads `prd.json` and `progress.txt`
 2. Picks the highest priority incomplete task
 3. Implements the feature following project conventions
@@ -146,20 +152,21 @@ Each iteration:
 7. Commits changes to git
 
 Ralph continues until:
+
 - All tasks are complete (`RALPH_COMPLETE`)
 - Human help is needed (`RALPH_NEEDS_HELP`)
 - Maximum iterations reached
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `ralph <n>` | Run ralph for n iterations, working through the PRD |
-| `ralph --init` | Create template files (prd.json, progress.txt, project-request.md) |
-| `ralph --plan [desc]` | Generate PRD from project-request.md or inline description |
-| `ralph --update` | Check for and install updates (or show Homebrew instructions) |
-| `ralph --version` | Display the current version |
-| `ralph --help` | Show help message with usage information |
+| Command               | Description                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| `ralph <n>`           | Run ralph for n iterations, working through the PRD                |
+| `ralph --init`        | Create template files (prd.json, progress.txt, project-request.md) |
+| `ralph --plan [desc]` | Generate PRD from project-request.md or inline description         |
+| `ralph --update`      | Check for and install updates (or show Homebrew instructions)      |
+| `ralph --version`     | Display the current version                                        |
+| `ralph --help`        | Show help message with usage information                           |
 
 ## Workflow
 
@@ -239,12 +246,12 @@ Ralph uses a JSON-based Product Requirements Document (PRD) to track tasks. Each
 
 ### PRD Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | number | Unique identifier for the task |
-| `description` | string | Brief description of what to implement |
-| `acceptance_criteria` | array | List of criteria that must be met for the task to be complete |
-| `passes` | boolean | Whether the task has been completed (`true` when done) |
+| Field                 | Type    | Description                                                   |
+| --------------------- | ------- | ------------------------------------------------------------- |
+| `id`                  | number  | Unique identifier for the task                                |
+| `description`         | string  | Brief description of what to implement                        |
+| `acceptance_criteria` | array   | List of criteria that must be met for the task to be complete |
+| `passes`              | boolean | Whether the task has been completed (`true` when done)        |
 
 ### How Ralph Uses the PRD
 
@@ -265,6 +272,7 @@ ralph --update
 ```
 
 This will:
+
 - Check the latest version from GitHub
 - Compare with your current version
 - Download and replace the script if a newer version is available
@@ -298,7 +306,7 @@ rm /path/to/your/ralph
 You can also use the uninstall script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CorepanyDev/ralph/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CorepanyDev/homebrew-ralph/main/uninstall.sh | bash
 ```
 
 ### Homebrew Installation
@@ -311,7 +319,7 @@ brew uninstall ralph
 
 - [Tips for AI Coding with Ralph Wiggum](https://www.aihero.dev/tips-for-ai-coding-with-ralph-wiggum) - Best practices and workflow tips
 - [Claude Code CLI Documentation](https://docs.anthropic.com/en/docs/claude-code) - Official documentation for the underlying AI assistant
-- [GitHub Repository](https://github.com/CorepanyDev/ralph) - Source code, issues, and releases
+- [GitHub Repository](https://github.com/CorepanyDev/homebrew-ralph) - Source code, issues, and releases
 
 ## License
 

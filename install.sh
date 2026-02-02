@@ -4,7 +4,7 @@
 set -e
 
 # Configuration
-RALPH_REPO='CorepanyDev/ralph'
+RALPH_REPO='CorepanyDev/homebrew-ralph'
 INSTALL_DIR="${RALPH_INSTALL_DIR:-$HOME/.local/bin}"
 
 # Colors for output (matching ralph's colors)
