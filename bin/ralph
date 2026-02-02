@@ -278,12 +278,14 @@ fi
 
 # Show help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Ralph Wiggum - Autonomous AI Coding Loop"
+    echo "Ralph Wiggum - Autonomous AI Coding Loop (v${RALPH_VERSION})"
     echo ""
     echo "Usage:"
     echo "  ralph <max_iterations>    Run Ralph for N iterations"
     echo "  ralph --init              Create template files (prd.json, progress.txt, project-request.md)"
     echo "  ralph --plan [desc]       Generate PRD from project-request.md or description"
+    echo "  ralph --version           Show version information"
+    echo "  ralph --update            Update ralph to latest version"
     echo "  ralph --help              Show this help message"
     echo ""
     echo "Examples:"
