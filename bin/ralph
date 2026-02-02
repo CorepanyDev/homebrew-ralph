@@ -205,6 +205,65 @@ if [ "$1" = "--update" ] || [ "$1" = "-u" ]; then
     fi
 
     echo -e "${YELLOW}A new version is available!${NC}"
+    echo ""
+
+    # Prompt for confirmation
+    read -r -p "Do you want to update? (y/N) " response
+    case "$response" in
+        [yY][eE][sS]|[yY])
+            ;;
+        *)
+            echo ""
+            echo -e "${YELLOW}Update cancelled.${NC}"
+            exit 0
+            ;;
+    esac
+
+    echo ""
+    echo -e "Downloading ralph v${LATEST_VERSION}..."
+
+    # Get the path to the current script
+    SCRIPT_PATH=$(realpath "$0" 2>/dev/null || readlink -f "$0" 2>/dev/null || echo "$0")
+
+    # Download new version to a temporary file
+    TEMP_FILE=$(mktemp)
+    DOWNLOAD_URL="https://raw.githubusercontent.com/${RALPH_REPO}/v${LATEST_VERSION}/bin/ralph"
+
+    if ! curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE" 2>/dev/null; then
+        rm -f "$TEMP_FILE"
+        echo -e "${RED}Error: Failed to download update from GitHub.${NC}"
+        echo "URL: $DOWNLOAD_URL"
+        echo "Please check your internet connection and try again."
+        exit 1
+    fi
+
+    # Verify the downloaded file is not empty and looks like a shell script
+    if [ ! -s "$TEMP_FILE" ] || ! head -1 "$TEMP_FILE" | grep -q "^#!/"; then
+        rm -f "$TEMP_FILE"
+        echo -e "${RED}Error: Downloaded file appears to be invalid.${NC}"
+        echo "Please try again or update manually."
+        exit 1
+    fi
+
+    # Preserve permissions from original script
+    ORIGINAL_PERMS=$(stat -f "%OLp" "$SCRIPT_PATH" 2>/dev/null || stat -c "%a" "$SCRIPT_PATH" 2>/dev/null)
+
+    # Replace the current script with the new version
+    if ! mv "$TEMP_FILE" "$SCRIPT_PATH" 2>/dev/null; then
+        rm -f "$TEMP_FILE"
+        echo -e "${RED}Error: Could not replace script. You may need sudo permissions.${NC}"
+        echo "Try: sudo ralph --update"
+        exit 1
+    fi
+
+    # Restore permissions
+    chmod "$ORIGINAL_PERMS" "$SCRIPT_PATH" 2>/dev/null || chmod +x "$SCRIPT_PATH"
+
+    echo ""
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}  Successfully updated to v${LATEST_VERSION}!${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo ""
     exit 0
 fi
 
