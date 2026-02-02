@@ -160,3 +160,96 @@ Ralph continues until:
 | `ralph --update` | Check for and install updates (or show Homebrew instructions) |
 | `ralph --version` | Display the current version |
 | `ralph --help` | Show help message with usage information |
+
+## Workflow
+
+```
+┌─────────────────────┐
+│  project-request.md │  Your project description
+└──────────┬──────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ ralph --plan │  Generate PRD from requirements
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   prd.json   │  Product Requirements Document
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   ralph <n>  │  Run iteration loop
+    └──────┬───────┘
+           │
+           ▼
+┌──────────────────────────────────────────────────┐
+│                  Iteration Loop                   │
+│  ┌────────────────────────────────────────────┐  │
+│  │ 1. Read prd.json + progress.txt            │  │
+│  │ 2. Pick highest priority incomplete task   │  │
+│  │ 3. Implement the feature                   │  │
+│  │ 4. Run tests and verification              │  │
+│  │ 5. Update prd.json (passes: true)          │  │
+│  │ 6. Append to progress.txt                  │  │
+│  │ 7. Git commit                              │  │
+│  └────────────────────────────────────────────┘  │
+│                       │                           │
+│         ┌─────────────┼─────────────┐             │
+│         ▼             ▼             ▼             │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│   │ COMPLETE │  │NEEDS_HELP│  │ MAX ITER │       │
+│   └──────────┘  └──────────┘  └──────────┘       │
+└──────────────────────────────────────────────────┘
+```
+
+## PRD Format
+
+Ralph uses a JSON-based Product Requirements Document (PRD) to track tasks. Each item in the PRD represents a single, atomic feature to implement.
+
+### Example PRD Structure
+
+```json
+[
+  {
+    "id": 1,
+    "description": "Add user authentication with email and password",
+    "acceptance_criteria": [
+      "Users can sign up with email and password",
+      "Users can log in with valid credentials",
+      "Invalid credentials show error message",
+      "Passwords are hashed before storage"
+    ],
+    "passes": false
+  },
+  {
+    "id": 2,
+    "description": "Create todo list CRUD operations",
+    "acceptance_criteria": [
+      "Users can create new todo items",
+      "Users can view their todo list",
+      "Users can mark todos as complete",
+      "Users can delete todos"
+    ],
+    "passes": false
+  }
+]
+```
+
+### PRD Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | number | Unique identifier for the task |
+| `description` | string | Brief description of what to implement |
+| `acceptance_criteria` | array | List of criteria that must be met for the task to be complete |
+| `passes` | boolean | Whether the task has been completed (`true` when done) |
+
+### How Ralph Uses the PRD
+
+1. **Task Selection**: Ralph reads all tasks with `passes: false` and selects the highest priority one based on dependencies and logical order
+2. **Implementation**: Implements the feature following best practices for the language/framework in use
+3. **Verification**: Runs tests and type checking to ensure acceptance criteria are met
+4. **Completion**: Sets `passes: true` in the PRD when all criteria are satisfied
+5. **Progress Logging**: Appends notes about what was done to `progress.txt`
