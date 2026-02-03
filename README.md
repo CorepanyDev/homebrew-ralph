@@ -2,7 +2,7 @@
 
 **Autonomous AI Coding Loop powered by Claude Code CLI**
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Ralph Wiggum is a CLI tool that runs Claude Code in an autonomous loop, working through a Product Requirements Document (PRD) one feature at a time. It reads your requirements, implements them, verifies the work, and commits changes—all without manual intervention.
@@ -109,6 +109,8 @@ This creates:
 - `progress.txt` - A log file for tracking learnings across iterations
 - `project-request.md` - A template for describing your project idea
 
+> **Note:** These template files are local workflow files and are not committed to git by Ralph. You can use `ralph --clean` to remove them when you're done.
+
 ### Generate a PRD
 
 Use `--plan` to generate a PRD from your project description:
@@ -162,7 +164,10 @@ Ralph continues until:
 | Command               | Description                                                        |
 | --------------------- | ------------------------------------------------------------------ |
 | `ralph <n>`           | Run ralph for n iterations, working through the PRD                |
+| `ralph --once`        | Run single iteration interactively                                 |
 | `ralph --init`        | Create template files (prd.json, progress.txt, project-request.md) |
+| `ralph --reset`       | Reset template files to initial state                              |
+| `ralph --clean`       | Remove all Ralph template files                                    |
 | `ralph --plan [desc]` | Generate PRD from project-request.md or inline description         |
 | `ralph --update`      | Check for and install updates (or show Homebrew instructions)      |
 | `ralph --version`     | Display the current version                                        |
