@@ -2,7 +2,7 @@
 
 **Autonomous AI Coding Loop powered by Claude Code CLI**
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Ralph Wiggum is a CLI tool that runs Claude Code in an autonomous loop, working through a Product Requirements Document (PRD) one feature at a time. It reads your requirements, implements them, verifies the work, and commits changes—all without manual intervention.
@@ -168,7 +168,7 @@ Ralph continues until:
 | `ralph --init`        | Create template files (prd.json, progress.txt, project-request.md) |
 | `ralph --reset`       | Reset template files to initial state                              |
 | `ralph --clean`       | Remove all Ralph template files                                    |
-| `ralph --plan [desc]` | Generate PRD from project-request.md or inline description         |
+| `ralph --plan [--max-tasks N] [desc]` | Generate PRD (default: 30 tasks max)                     |
 | `ralph --update`      | Check for and install updates (or show Homebrew instructions)      |
 | `ralph --version`     | Display the current version                                        |
 | `ralph --help`        | Show help message with usage information                           |

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Ralph Wiggum - Autonomous AI Coding Loop
-# Usage: ralph <max_iterations> | ralph --once | ralph --init | ralph --reset | ralph --clean | ralph --plan [description]
+# Usage: ralph <max_iterations> | ralph --once | ralph --init | ralph --reset | ralph --clean | ralph --plan [--max-tasks N] [description]
 
-RALPH_VERSION='1.3.0'
+RALPH_VERSION='1.4.0'
 RALPH_REPO='CorepanyDev/homebrew-ralph'
 #
 # This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
@@ -535,6 +535,30 @@ fi
 
 # Check for --plan flag
 if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
+    shift # consume --plan/-p
+
+    # Parse --max-tasks and inline description from remaining args
+    MAX_TASKS=30
+    INLINE_DESC=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --max-tasks)
+                if [ -z "$2" ] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo -e "${RED}Error: --max-tasks requires a numeric argument${NC}"
+                    echo "Usage: ralph --plan --max-tasks 50"
+                    exit 1
+                fi
+                MAX_TASKS="$2"
+                shift 2
+                ;;
+            *)
+                INLINE_DESC="$1"
+                shift
+                ;;
+        esac
+    done
+
     echo -e "${BLUE}========================================${NC}"
     echo -e "${BLUE}  Ralph Wiggum - PRD Planning Mode     ${NC}"
     echo -e "${BLUE}========================================${NC}"
@@ -546,8 +570,8 @@ if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
     if [ -f "$PROJECT_REQUEST_FILE" ]; then
         PROJECT_DESCRIPTION=$(cat "$PROJECT_REQUEST_FILE")
         echo -e "Using project description from: ${YELLOW}${PROJECT_REQUEST_FILE}${NC}"
-    elif [ -n "$2" ]; then
-        PROJECT_DESCRIPTION="$2"
+    elif [ -n "$INLINE_DESC" ]; then
+        PROJECT_DESCRIPTION="$INLINE_DESC"
         echo -e "Using project description from parameter"
     else
         echo -e "${RED}Error: No project description provided${NC}"
@@ -593,8 +617,8 @@ ${PROJECT_DESCRIPTION}
    - Completable in a single AI context window
    - One focused piece of functionality per task
    - If a feature is large, break it into multiple tasks
-   - Maximum 30 tasks total (can be less for smaller projects)
-   - Balance atomicity with keeping total tasks under 30
+   - Maximum ${MAX_TASKS} tasks total (can be less for smaller projects)
+   - Balance atomicity with keeping total tasks under ${MAX_TASKS}
 
 4. **Task Independence**:
    - Order tasks by logical dependencies
@@ -667,7 +691,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  ralph --init              Create template files (prd.json, progress.txt, project-request.md)"
     echo "  ralph --reset             Reset template files to initial state"
     echo "  ralph --clean             Remove all Ralph template files"
-    echo "  ralph --plan [desc]       Generate PRD from project-request.md or description"
+    echo "  ralph --plan [--max-tasks N] [desc]   Generate PRD (default: 30 tasks max)"
     echo "  ralph --version           Show version information"
     echo "  ralph --update            Update ralph to latest version"
     echo "  ralph --help              Show this help message"
@@ -678,6 +702,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  ralph --clean             Remove all Ralph template files"
     echo "  ralph --plan              Generate PRD from project-request.md"
     echo "  ralph --plan \"Build a todo app\"   Generate PRD from description"
+    echo "  ralph --plan --max-tasks 50       Generate PRD with up to 50 tasks"
     echo "  ralph 10                  Run 10 autonomous iterations"
     echo "  ralph --once              Run one iteration interactively"
     echo ""
