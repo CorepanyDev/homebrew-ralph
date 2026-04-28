@@ -2,7 +2,7 @@
 # Ralph Wiggum - Autonomous AI Coding Loop
 # Usage: ralph <max_iterations> | ralph --once | ralph --init | ralph --reset | ralph --clean | ralph --plan [--max-tasks N] [description]
 
-RALPH_VERSION='1.4.0'
+RALPH_VERSION='1.4.1'
 RALPH_REPO='CorepanyDev/homebrew-ralph'
 #
 # This script runs Claude Code in a loop, working through a PRD (Product Requirements Document)
@@ -21,6 +21,9 @@ SCRIPT_DIR="$(pwd)"
 PRD_FILE="${SCRIPT_DIR}/prd.json"
 PROGRESS_FILE="${SCRIPT_DIR}/progress.txt"
 PROJECT_REQUEST_FILE="${SCRIPT_DIR}/project-request.md"
+CLAUDE_MODEL="${RALPH_CLAUDE_MODEL:-opus}"
+CLAUDE_EFFORT="${RALPH_CLAUDE_EFFORT:-max}"
+CLAUDE_ARGS=(--model "$CLAUDE_MODEL" --effort "$CLAUDE_EFFORT")
 
 # Colors for output
 RED='\033[0;31m'
@@ -486,6 +489,8 @@ if [ "$1" = "--once" ] || [ "$1" = "-o" ]; then
 
     echo -e "PRD File: ${YELLOW}${PRD_FILE}${NC}"
     echo -e "Progress File: ${YELLOW}${PROGRESS_FILE}${NC}"
+    echo -e "Claude Model: ${YELLOW}${CLAUDE_MODEL}${NC}"
+    echo -e "Claude Effort: ${YELLOW}${CLAUDE_EFFORT}${NC}"
     echo ""
     echo -e "${YELLOW}Starting interactive Claude session...${NC}"
     echo ""
@@ -523,7 +528,7 @@ IMPORTANT:
 When you have completed the task, let the user know you are done."
 
     # Run Claude interactively (no -p flag = interactive mode, user watches in real-time)
-    (cd "$SCRIPT_DIR" && claude --dangerously-skip-permissions "$SINGLE_PROMPT")
+    (cd "$SCRIPT_DIR" && claude "${CLAUDE_ARGS[@]}" --dangerously-skip-permissions "$SINGLE_PROMPT")
 
     echo ""
     echo -e "${GREEN}========================================${NC}"
@@ -583,6 +588,9 @@ if [ "$1" = "--plan" ] || [ "$1" = "-p" ]; then
         exit 1
     fi
 
+    echo ""
+    echo -e "Claude Model: ${YELLOW}${CLAUDE_MODEL}${NC}"
+    echo -e "Claude Effort: ${YELLOW}${CLAUDE_EFFORT}${NC}"
     echo ""
     echo -e "${YELLOW}Starting interactive Claude session to generate PRD...${NC}"
     echo ""
@@ -667,7 +675,7 @@ ${PROJECT_DESCRIPTION}
 Generate the PRD now. Remember: SMALL tasks are critical for success."
 
     # Run Claude in plan mode to generate the PRD
-    (cd "$SCRIPT_DIR" && claude --permission-mode plan "$PLAN_PROMPT")
+    (cd "$SCRIPT_DIR" && claude "${CLAUDE_ARGS[@]}" --permission-mode plan "$PLAN_PROMPT")
 
     echo ""
     echo -e "${GREEN}========================================${NC}"
@@ -695,6 +703,10 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  ralph --version           Show version information"
     echo "  ralph --update            Update ralph to latest version"
     echo "  ralph --help              Show this help message"
+    echo ""
+    echo "Claude configuration:"
+    echo "  RALPH_CLAUDE_MODEL        Claude model alias or full model name (default: opus)"
+    echo "  RALPH_CLAUDE_EFFORT       Claude effort level: low, medium, high, xhigh, max (default: max)"
     echo ""
     echo "Examples:"
     echo "  ralph --init              Initialize a new project"
@@ -785,6 +797,8 @@ echo ""
 echo -e "PRD File: ${YELLOW}${PRD_FILE}${NC}"
 echo -e "Progress File: ${YELLOW}${PROGRESS_FILE}${NC}"
 echo -e "Max Iterations: ${YELLOW}${MAX_ITERATIONS}${NC}"
+echo -e "Claude Model: ${YELLOW}${CLAUDE_MODEL}${NC}"
+echo -e "Claude Effort: ${YELLOW}${CLAUDE_EFFORT}${NC}"
 echo ""
 
 # Temp file for capturing output
@@ -801,7 +815,7 @@ for ((i=1; i<=MAX_ITERATIONS; i++)); do
     # Run Claude Code with the prompt in the current working directory
     # --dangerously-skip-permissions skips all permission prompts
     # Using tee to both display output and capture it
-    (cd "$SCRIPT_DIR" && claude --dangerously-skip-permissions -p "$PROMPT") 2>&1 | tee "$OUTPUT_FILE"
+    (cd "$SCRIPT_DIR" && claude "${CLAUDE_ARGS[@]}" --dangerously-skip-permissions -p "$PROMPT") 2>&1 | tee "$OUTPUT_FILE"
 
     # Check if PRD is complete
     if grep -q "RALPH_COMPLETE" "$OUTPUT_FILE"; then

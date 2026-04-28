@@ -2,7 +2,7 @@
 
 **Autonomous AI Coding Loop powered by Claude Code CLI**
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
+[![Version](https://img.shields.io/badge/version-1.4.1-blue.svg)](https://github.com/CorepanyDev/homebrew-ralph/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Ralph Wiggum is a CLI tool that runs Claude Code in an autonomous loop, working through a Product Requirements Document (PRD) one feature at a time. It reads your requirements, implements them, verifies the work, and commits changes—all without manual intervention.
@@ -141,6 +141,21 @@ Once you have a `prd.json`, run ralph with a maximum number of iterations:
 
 ```bash
 ralph 10
+```
+
+By default, Ralph runs Claude Code with the latest Opus alias and maximum effort:
+
+```bash
+claude --model opus --effort max
+```
+
+Ralph prints the selected model and effort level in the terminal before it starts Claude.
+
+You can override either value per run:
+
+```bash
+RALPH_CLAUDE_MODEL=sonnet RALPH_CLAUDE_EFFORT=high ralph 5
+RALPH_CLAUDE_MODEL=claude-sonnet-4-6 RALPH_CLAUDE_EFFORT=max ralph --once
 ```
 
 Each iteration:
