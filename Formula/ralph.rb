@@ -1,8 +1,8 @@
 class Ralph < Formula
   desc "Autonomous AI coding loop powered by Claude Code CLI"
   homepage "https://github.com/CorepanyDev/homebrew-ralph"
-  url "https://github.com/CorepanyDev/homebrew-ralph/archive/refs/tags/v1.4.0.tar.gz"
-  sha256 "bf1c93a2957186a8bc90de96ffe3fe70c47ca9aeb77c44bb967ed95e1dff60b7"
+  url "https://github.com/CorepanyDev/homebrew-ralph/archive/refs/tags/v1.4.1.tar.gz"
+  sha256 "b6e64ff4703c85a0605f08def65c32517c3ef1a1e44833eb3bc27cd5eb466078"
   license "MIT"
 
   def install
